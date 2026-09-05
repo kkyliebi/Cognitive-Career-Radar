@@ -124,8 +124,8 @@ KYLIE'S IDENTITY & COGNITIVE SYSTEM SUMMARY:
   * Level 2 (TRANSLATE): Turns strategy/concept into feasible communication or production solution. Strong fit.
   * Level 3 (SHAPE): Contributes meaningfully to concepts, narratives, experience, strategic direction. Very strong fit.
   * Level 4 (DEFINE): Participates in determining what problem to solve. Highest-value fit.
-- Positive Signals: Complex/ambiguous problems, narrative systems, integrated communication, automotive/luxury, speculative/future scenarios, multidisciplinary collaboration, creative production / physical realisation.
-- HARD NEGATIVE SIGNALS: Predominantly daily social publishing, social calendars, community management, influencer ops, performance marketing/SEO, repetitive banner resizing, pure administrative PM, pure account approval chasing.
+- Positive Signals: Complex/ambiguous problems, narrative systems, integrated communication, automotive/luxury, speculative/future scenarios, multidisciplinary collaboration, creative production [...]
+- HARD NEGATIVE SIGNALS: Predominantly daily social publishing, social calendars, community management, influencer ops, performance marketing/SEO, repetitive banner resizing, pure administrative [...]
 - IMPORTANT RULE: Company philosophy and structural alignment is PRIORITY #1. Whether there is an open job is secondary. Spontaneous / Cold outreach to a high-fit studio is highly encouraged.
 
 INPUT TO EVALUATE:
@@ -135,7 +135,7 @@ ${crawledContent ? `Live Website Crawled Data:\n"""\n${crawledContent}\n"""\n` :
 ${content ? `Provided JD or User Description:\n"""\n${content}\n"""` : ""}
 
 NOTE FOR URL-ONLY EVALUATIONS:
-If the user provided only a URL (and no JD text), evaluate the studio or agency based on the crawled site content, its ethos, its problem domain, and where a high-level Communication Designer / Creative Producer fits into their team for spontaneous executive pitch.
+If the user provided only a URL (and no JD text), evaluate the studio or agency based on the crawled site content, its ethos, its problem domain, and where a high-level Communication Designer / C[...]
 
 You MUST evaluate this opportunity strictly following the 18-Point Protocol and return a JSON object with this exact structure:
 {
@@ -174,14 +174,14 @@ You MUST evaluate this opportunity strictly following the 18-Point Protocol and 
   "confidence": "HIGH" | "MEDIUM" | "LOW",
   "recommendedAction": "Actionable verdict (e.g. 'Immediate high-priority cold outreach', 'Tailor automotive portfolio', 'Investigate team structure first', 'Skip')",
   "recommendedCV": "Creative / Design version" | "Automotive / Brand Communication version" | "Hybrid",
-  "recommendedPortfolioEmphasis": ["Array of recommended projects or case studies to emphasize, e.g. 'Audi Integrated Campaign', 'TYRANNO Speculative System', 'The Infinite Discussion', 'DEEAR Magazine'"],
+  "recommendedPortfolioEmphasis": ["Array of recommended projects or case studies to emphasize, e.g. 'Audi Integrated Campaign', 'TYRANNO Speculative System', 'The Infinite Discussion', 'DEEAR Ma[...]
   "coldOutreachAngle": "A sharp, tailored 2-3 sentence positioning proposition explaining why Kylie’s specific skillset is uniquely valuable to this team"
 }
 Output only valid JSON.
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "models/gemini-3.6-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -207,7 +207,7 @@ app.post("/api/discover-studios", async (req, res) => {
 You are the automated studio & agency discovery agent for Kylie Bi (Multidisciplinary Communication Designer & Creative Producer, "A translator of possibilities").
 
 YOUR MISSION:
-Search and identify 4 to 6 real, high-calibre independent creative studios, brand experience agencies, automotive/luxury communication consultancies, speculative/future design practices, or cultural production studios that are structurally aligned with Kylie's cognitive system.
+Search and identify 4 to 6 real, high-calibre independent creative studios, brand experience agencies, automotive/luxury communication consultancies, speculative/future design practices, or cultu[...]
 
 SEARCH CRITERIA:
 - Target Location / Eco-system: ${location} (e.g., Milan, Turin, Rome, Italy, Amsterdam, Berlin, Copenhagen, Europe, or Remote).
@@ -267,7 +267,7 @@ Provide real, authentic studios and accurate URLs. Return valid JSON only.
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "models/gemini-3.6-flash",
       contents: probePrompt,
       config: {
         responseMimeType: "application/json",
@@ -333,7 +333,7 @@ STYLE GUIDELINES:
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "models/gemini-3.6-flash",
       contents: outreachPrompt,
       config: {
         responseMimeType: "application/json",
