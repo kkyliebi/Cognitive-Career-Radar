@@ -65,8 +65,13 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "Cognitive Career Radar API" });
 });
 
+// Minimum meaningful body characters required to treat a crawled page as evaluable.
+// Below this threshold the page is likely a JS-rendered shell or bot-blocked, and we refuse
+// to fabricate a report instead of silently producing identical templated output.
+const MIN_USEFUL_CONTENT_CHARS = 300;
+
 // Helper: Fetch and extract clean text from a live studio/job URL
-async function fetchUrlContent(rawUrl: string): Promise<{ title: string; text: string; error?: string }> {
+async function fetchUrlContent(rawUrl: string): Promise<{ title: string; text: string; contentLength?: number; error?: string }> {
   try {
     let targetUrl = rawUrl.trim();
     if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
@@ -123,6 +128,7 @@ async function fetchUrlContent(rawUrl: string): Promise<{ title: string; text: s
 
     return {
       title,
+      contentLength: cleaned.length,
       text: `Page Title: ${title}\nMeta Description: ${metaDesc}\nExtracted Page Content:\n${truncated}`,
     };
   } catch (err: any) {
@@ -141,13 +147,40 @@ app.post("/api/evaluate-single", async (req, res) => {
 
     let crawledContent = "";
     let extractedTitle = "";
+    let crawlWarning: string | null = null;
 
     // If a URL is provided, actively fetch the live website content
+    const hasUserProvidedText = content && typeof content === "string" && content.trim().length > 0;
     if (url && typeof url === "string" && url.trim().length > 0) {
       const crawlResult = await fetchUrlContent(url);
+
+      // Refuse to fabricate: when the crawl is the SOLE source of input and it returned
+      // nothing useful, tell the user directly instead of letting the model invent a report.
+      if (!hasUserProvidedText) {
+        if (crawlResult.error) {
+          return res.status(422).json({
+            code: "CONTENT_EXTRACTION_FAILED",
+            error: `We could not extract content from this URL (${crawlResult.error}). The site likely blocked our request. Paste its About / role text into the description field instead.`,
+          });
+        }
+        if ((crawlResult.contentLength ?? 0) < MIN_USEFUL_CONTENT_CHARS) {
+          return res.status(422).json({
+            code: "CONTENT_EXTRACTION_FAILED",
+            error:
+              "This page renders its content with JavaScript (or returns no meaningful body text), so we could not extract enough information to evaluate it honestly. Paste its About / role text into the description field instead.",
+          });
+        }
+      }
+
       if (crawlResult.text) {
         crawledContent = crawlResult.text;
         extractedTitle = crawlResult.title;
+        if ((crawlResult.contentLength ?? 0) < MIN_USEFUL_CONTENT_CHARS) {
+          crawlWarning =
+            "Crawled website content was too thin to evaluate on its own; base the analysis primarily on the provided description text.";
+        }
+      } else if (crawlResult.error) {
+        crawlWarning = `Website crawl failed (${crawlResult.error}); the evaluation is based only on the provided text.`;
       }
     }
 
@@ -176,6 +209,7 @@ INPUT TO EVALUATE:
 Target Name / Hint: ${effectiveTargetName}
 Website / Job URL: ${url || "N/A"}
 ${crawledContent ? `Live Website Crawled Data:\n"""\n${crawledContent}\n"""\n` : ""}
+${crawlWarning ? `WARNING: ${crawlWarning} Do NOT fabricate site-specific claims or reach a confident verdict. Prefer "INVESTIGATE" priority and/or LOW confidence, and list what could not be verified in "unknowns".\n` : ""}
 ${content ? `Provided JD or User Description:\n"""\n${content}\n"""` : ""}
 
 NOTE FOR URL-ONLY EVALUATIONS:
@@ -229,7 +263,10 @@ Output only valid JSON.
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        temperature: 0.2,
+        // Raised from 0.2: low temperature made outputs converge to one identical
+        // template when crawled input was thin. 0.6 keeps JSON output stable while
+        // letting genuinely different inputs produce genuinely different reports.
+        temperature: 0.6,
       },
     });
 
