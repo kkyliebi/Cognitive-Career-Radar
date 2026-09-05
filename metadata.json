@@ -1,0 +1,6 @@
+{
+  "name": "Kylie Bi · Career Operating System",
+  "description": "Cognitive studio discovery, philosophical alignment evaluation, and application index for Kylie Bi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
