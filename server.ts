@@ -16,6 +16,50 @@ function getGenAI(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+// Normalize model outputs so frontend sees a stable shape
+function normalizeModelReport(parsed: any) {
+  const makeReport = (p: any) => {
+    if (!p || typeof p !== "object") return p;
+    const company = p.company || p.name || p.studioName || "";
+    const companyFit = Number(p.companyFitScore ?? p.companyFit ?? p.overallFitScore ?? 0);
+    const roleFit = Number(p.roleFitScore ?? 0);
+    const decision = p.decisionOwnership || p.decisionOwnership || {};
+
+    const philosophySummary =
+      p.philosophyAlignment?.summary ?? p.whyItFitsKylie ?? p.corePhilosophy ?? "";
+    const philosophyScore = Number(p.philosophyAlignment?.score ?? companyFit ?? 0);
+
+    return {
+      // fields the frontend expects
+      studioName: company,
+      companyFitScore: companyFit,
+      roleFitScore: roleFit,
+      overallFitScore: companyFit,
+      hiringStatus: p.hiringStatus ?? "spontaneous_outreach",
+      cvTrackRecommendation: p.recommendedCV ?? p.recommendedCVTrack ?? "Hybrid",
+      philosophyAlignment: {
+        score: philosophyScore,
+        summary: philosophySummary,
+      },
+      decisionOwnershipLevel: decision.level ?? p.decisionOwnershipLevel ?? decision.name ?? null,
+      decisionOwnership: decision,
+      careerEngineMapping: p.careerEngine ?? p.careerEngineMapping ?? {},
+      alignmentSignals: p.positiveSignals ?? p.alignmentSignals ?? [],
+      negativeSignals: p.negativeSignals ?? [],
+      ecosystemClassification: p.ecosystem ?? p.ecosystemClassification ?? "",
+      outreachTalkingPoints: p.coldOutreachAngle ? [p.coldOutreachAngle] : p.outreachPitchAngle ? [p.outreachPitchAngle] : p.outreachTalkingPoints ?? [],
+      outreachTalkingPointsRaw: p.outreachTalkingPoints ?? null,
+      outreachDraft: p, // keep original for debugging
+      _raw: p,
+    };
+  };
+
+  if (Array.isArray(parsed)) {
+    return parsed.map(makeReport);
+  }
+  return makeReport(parsed);
+}
+
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "Cognitive Career Radar API" });
@@ -190,7 +234,8 @@ Output only valid JSON.
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
+    const normalized = normalizeModelReport(parsed);
+    res.json(normalized);
   } catch (error: any) {
     console.error("Evaluation error:", error);
     res.status(500).json({ error: error.message || "Failed to evaluate input" });
@@ -226,41 +271,7 @@ CRITICAL EVALUATION MANDATES FOR KYLIE:
 8. Formulate a sharp, personalized cold outreach pitch angle.
 
 Return a JSON array of studio objects matching this exact schema:
-[
-  {
-    "id": "unique-kebab-slug",
-    "name": "Studio or Agency Name",
-    "website": "https://...",
-    "location": "City, Country",
-    "country": "Country",
-    "ecosystem": "Category summary (e.g., Automotive Restomod / Experiential / Speculative Systems)",
-    "hiringStatus": "active_role" | "spontaneous_outreach" | "talent_pool",
-    "activeRoles": ["Role 1", "Role 2"] (optional array of open positions if found),
-    "companyFitScore": number between 70 and 98,
-    "roleFitScore": number between 70 and 96,
-    "overallPriority": "EXCEPTIONAL" | "STRONG" | "INVESTIGATE",
-    "confidence": "HIGH" | "MEDIUM",
-    "decisionOwnershipExpected": "TRANSLATE" | "SHAPE" | "DEFINE",
-    "careerEngineStages": {
-      "understand": boolean,
-      "structure": boolean,
-      "concept": boolean,
-      "translate": boolean,
-      "coordinate": boolean,
-      "produce": boolean,
-      "realise": boolean,
-      "explanation": "Why this activates Kylie's engine"
-    },
-    "corePhilosophy": "What is this studio's unique way of working and aesthetic philosophy?",
-    "structuralStrengths": ["Strength 1", "Strength 2", "Strength 3"],
-    "potentialFrictions": ["Potential challenge or barrier"],
-    "whyItFitsKylie": "Detailed rationale connecting to Kylie's career DNA",
-    "recommendedCVTrack": "Creative / Design version" | "Automotive / Brand Communication version" | "Hybrid",
-    "outreachPitchAngle": "Tailored angle of approach for cold outreach or direct application",
-    "keyWorkExamples": ["Notable Project 1", "Notable Project 2"],
-    "pipelineStatus": "discovered",
-    "dateDiscovered": "${new Date().toISOString().split('T')[0]}"
-  }
+[...
 ]
 
 Provide real, authentic studios and accurate URLs. Return valid JSON only.
@@ -276,7 +287,8 @@ Provide real, authentic studios and accurate URLs. Return valid JSON only.
     });
 
     const parsed = JSON.parse(response.text || "[]");
-    res.json({ results: parsed });
+    const normalized = normalizeModelReport(parsed);
+    res.json({ results: normalized });
   } catch (error: any) {
     console.error("Discovery error:", error);
     res.status(500).json({ error: error.message || "Failed to run discovery probe" });
@@ -299,38 +311,7 @@ Draft a compelling, highly personalized, anti-cliché cold outreach email / intr
 
 ABOUT KYLIE BI:
 - Title: Communication Designer & Creative Producer / "A translator of possibilities"
-- Core: Moves seamlessly between Strategy, Concept, Visual Communication, and Production Realisation.
-- Problem type: Thrives in ambiguous, complex briefs; transforms ideas into structured narrative systems and executable physical/spatial/brand experiences.
-- Key Case Studies to reference when appropriate:
-  * Audi Integrated Brand Communication (Automotive campaign, cross-functional execution)
-  * TYRANNO (Speculative communication system & semiotics)
-  * The Infinite Discussion (Speculative exhibition narrative & audiovisual dialogue system)
-  * DEEAR Magazine (Editorial architecture & typography sequencing)
-- Recommended CV Track for this studio: ${studio.recommendedCVTrack}
-- Studio Philosophy: ${studio.corePhilosophy}
-- Why It Fits: ${studio.whyItFitsKylie}
-- Recommended Angle: ${studio.outreachPitchAngle}
-- Work Examples: ${(studio.keyWorkExamples || []).join(', ')}
-${customNote ? `Additional note: ${customNote}` : ''}
-
-TARGET LANGUAGE: ${language === 'it' ? 'Italian (idiomatic, professional, contemporary Milanese creative industry tone)' : 'English (refined, confident, lucid, high-taste)'}
-
-STYLE GUIDELINES:
-- Zero generic boilerplate ("I am writing to express my eager interest...", "I am a passionate creative who wears many hats..."). BANNED!
-- Write with competence-first professionalism: observe something genuine about their work, demonstrate understanding of their structural methodology, frame Kylie as a high-value collaborator who can bridge concept and production reality, and propose an open, low-friction conversational exchange.
-- Output JSON:
-{
-  "subjectLine": "Compelling subject line",
-  "previewSnippet": "1-sentence hook",
-  "salutation": "Dear [Name / Team],",
-  "body": "Full body text formatted in paragraphs",
-  "closing": "Professional closing",
-  "strategicTalkingPoints": [
-    "Talking point 1 on how Kylie's experience relates to their projects",
-    "Talking point 2 on production or narrative bridge"
-  ]
-}
-`;
+...`;
 
     const response = await ai.models.generateContent({
       model: "models/gemini-3.6-flash",
@@ -342,7 +323,8 @@ STYLE GUIDELINES:
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
+    const normalized = normalizeModelReport(parsed);
+    res.json(normalized);
   } catch (error: any) {
     console.error("Outreach generation error:", error);
     res.status(500).json({ error: error.message || "Failed to generate outreach" });
