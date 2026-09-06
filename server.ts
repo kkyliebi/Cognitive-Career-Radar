@@ -5,16 +5,41 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
-const GEMINI_MODEL = "models/gemini-3.5-flash-lite";
+// Official Gemini API model code (do not prefix with "models/" — that can make
+// an unknown id look like a tuned-model resource and return 401 instead of 404).
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
 app.use(express.json({ limit: "10mb" }));
 
 function getGenAI(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is required.");
   }
-  return new GoogleGenAI({ apiKey });
+  // Force Gemini Developer API (not Vertex / ADC OAuth). Passing an API key as a
+  // Bearer token yields 401 ACCESS_TOKEN_TYPE_UNSUPPORTED.
+  return new GoogleGenAI({
+    apiKey,
+    vertexai: false,
+  });
+}
+
+function geminiClientErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  try {
+    const parsed = JSON.parse(raw);
+    const apiError = parsed?.error;
+    const reason = apiError?.details?.[0]?.reason;
+    if (apiError?.code === 401 || apiError?.status === "UNAUTHENTICATED") {
+      if (reason === "ACCESS_TOKEN_TYPE_UNSUPPORTED") {
+        return `Gemini rejected the credentials for model ${GEMINI_MODEL}. Use a Gemini API key from Google AI Studio (AIza… or AQ.…), not an OAuth/access token, and confirm this model is enabled for the key.`;
+      }
+      return apiError.message || "Gemini authentication failed.";
+    }
+    return apiError?.message || raw;
+  } catch {
+    return raw;
+  }
 }
 
 // Normalize model outputs so frontend sees a stable shape
@@ -276,7 +301,7 @@ Output only valid JSON.
     res.json(normalized);
   } catch (error: any) {
     console.error("Evaluation error:", error);
-    res.status(500).json({ error: error.message || "Failed to evaluate input" });
+    res.status(500).json({ error: geminiClientErrorMessage(error) || "Failed to evaluate input" });
   }
 });
 
@@ -329,7 +354,7 @@ Provide real, authentic studios and accurate URLs. Return valid JSON only.
     res.json({ results: normalized });
   } catch (error: any) {
     console.error("Discovery error:", error);
-    res.status(500).json({ error: error.message || "Failed to run discovery probe" });
+    res.status(500).json({ error: geminiClientErrorMessage(error) || "Failed to run discovery probe" });
   }
 });
 
@@ -365,7 +390,7 @@ ABOUT KYLIE BI:
     res.json(normalized);
   } catch (error: any) {
     console.error("Outreach generation error:", error);
-    res.status(500).json({ error: error.message || "Failed to generate outreach" });
+    res.status(500).json({ error: geminiClientErrorMessage(error) || "Failed to generate outreach" });
   }
 });
 
