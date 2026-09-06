@@ -5,6 +5,7 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
+const GEMINI_MODEL = "models/gemini-3.5-flash-lite";
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -259,7 +260,7 @@ Output only valid JSON.
 `;
 
     const response = await ai.models.generateContent({
-      model: "models/gemini-3.6-flash",
+      model: GEMINI_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -315,7 +316,7 @@ Provide real, authentic studios and accurate URLs. Return valid JSON only.
 `;
 
     const response = await ai.models.generateContent({
-      model: "models/gemini-3.6-flash",
+      model: GEMINI_MODEL,
       contents: probePrompt,
       config: {
         responseMimeType: "application/json",
@@ -351,7 +352,7 @@ ABOUT KYLIE BI:
 ...`;
 
     const response = await ai.models.generateContent({
-      model: "models/gemini-3.6-flash",
+      model: GEMINI_MODEL,
       contents: outreachPrompt,
       config: {
         responseMimeType: "application/json",
