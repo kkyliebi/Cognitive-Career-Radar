@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 // Official Gemini API model code (do not prefix with "models/" — that can make
 // an unknown id look like a tuned-model resource and return 401 instead of 404).
-const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 app.use(express.json({ limit: "10mb" }));
 
