@@ -2,24 +2,50 @@ export type EditorialTheme = 'petrol' | 'plum' | 'midnight' | 'emerald';
 
 export type HiringStatus = 'active_role' | 'spontaneous_outreach' | 'talent_pool';
 
-export type PriorityLevel = 'EXCEPTIONAL' | 'STRONG' | 'INVESTIGATE' | 'LOW' | 'REJECT' | 'UNKNOWN';
+export type PriorityLevel = 'EXCEPTIONAL' | 'STRONG' | 'HIGH' | 'INVESTIGATE' | 'MEDIUM' | 'LOW' | 'REJECT' | 'UNKNOWN';
 
-export type DecisionOwnershipLevel = 'EXECUTE' | 'COORDINATE' | 'TRANSLATE' | 'SHAPE' | 'DEFINE' | 'UNKNOWN';
+export type DecisionOwnershipLevel = 'EXECUTE' | 'COORDINATE' | 'TRANSLATE' | 'SHAPE' | 'DEFINE' | 'UNKNOWN' | string;
 
-export type CVTrack = 'Creative / Design version' | 'Automotive / Brand Communication version' | 'Hybrid';
+export type CVTrack = 'Creative / Design version' | 'Automotive / Brand Communication version' | 'Hybrid' | string;
 
-export type PipelineStatus = 'discovered' | 'saved' | 'outreach_prepared' | 'contacted' | 'interviewing' | 'archived';
+export type PipelineStatus = 'discovered' | 'saved' | 'outreach_prepared' | 'contacted' | 'interviewing' | 'archived' | 'dismissed';
 
 export interface CareerEngineActivation {
-  understand: boolean;
-  structure: boolean;
-  concept: boolean;
-  translate: boolean;
-  coordinate: boolean;
-  produce: boolean;
-  realise: boolean;
+  // Kylie's 8-Step Career Engine
+  understandDomain?: boolean; // Understand unfamiliar domain
+  identifyRelationships?: boolean; // Identify relationships
+  structureComplexity?: boolean; // Structure complexity
+  createConceptsScenarios?: boolean; // Create concepts / scenarios
+  translateArtefacts?: boolean; // Translate into artefacts
+  facilitatePeople?: boolean; // Facilitate people
+  designSystemsNarrative?: boolean; // Design interaction / narrative / systems
+  coordinateImplementation?: boolean; // Coordinate implementation
+
+  // Legacy / Shorthand keys for compatibility
+  understand?: boolean;
+  relationships?: boolean;
+  structure?: boolean;
+  concept?: boolean;
+  translate?: boolean;
+  facilitate?: boolean;
+  design?: boolean;
+  coordinate?: boolean;
+  produce?: boolean;
+  realise?: boolean;
   explanation?: string;
 }
+
+export const SEARCH_ECOSYSTEM_DOMAINS = [
+  'All',
+  'Human–AI Interaction, AI Experience, Agent Experience & AI Transformation',
+  'Design Strategy, Systems Design & Complexity Structuring',
+  'Narrative Systems, Speculative Scenarios & Worldbuilding',
+  'Spatial Narrative, Exhibition and Immersive Experience',
+  'Automotive and Luxury Brand Communication & Experience',
+  'Creative Direction, Communication & Interdisciplinary Production',
+] as const;
+
+export type SearchEcosystemDomain = (typeof SEARCH_ECOSYSTEM_DOMAINS)[number] | string;
 
 export interface StudioCandidate {
   id: string;
@@ -33,7 +59,7 @@ export interface StudioCandidate {
   companyFitScore: number;
   roleFitScore?: number;
   overallPriority: PriorityLevel;
-  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'MEDIUM_HIGH' | string;
   decisionOwnershipExpected: DecisionOwnershipLevel;
   careerEngineStages: CareerEngineActivation;
   corePhilosophy: string;
@@ -50,6 +76,7 @@ export interface StudioCandidate {
 
 export interface EvaluationReport {
   company: string;
+  studioName?: string;
   role: string;
   location: string;
   hiringStatus: HiringStatus;
@@ -66,19 +93,30 @@ export interface EvaluationReport {
     name: DecisionOwnershipLevel;
     evidence: string;
   };
+  decisionOwnershipLevel?: DecisionOwnershipLevel;
   careerEngine: CareerEngineActivation;
+  careerEngineMapping?: CareerEngineActivation;
   crossFunctionalRelationships: string[];
   positiveSignals: string[];
+  alignmentSignals?: string[];
   negativeSignals: string[];
   unknowns: string[];
   companyFitScore: number;
   roleFitScore: number;
+  overallFitScore?: number;
   priority: PriorityLevel;
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   recommendedAction: string;
   recommendedCV: CVTrack;
+  cvTrackRecommendation?: CVTrack;
   recommendedPortfolioEmphasis: string[];
   coldOutreachAngle: string;
+  outreachTalkingPoints?: string[];
+  philosophyAlignment?: {
+    score: number;
+    summary: string;
+  };
+  ecosystemClassification?: string;
   sourceQuality?: string;
 }
 
@@ -101,6 +139,15 @@ export type ApplicationStatus =
   | 'In Dialogue'
   | 'Offer'
   | 'Draft';
+
+export const APPLICATION_CHANNEL_OPTIONS = [
+  'Website',
+  'Direct Email',
+  'Website + Direct Email',
+  'Social Media',
+] as const;
+
+export type ApplicationChannel = (typeof APPLICATION_CHANNEL_OPTIONS)[number] | string;
 
 export interface ApplicationRecord {
   id: string; // e.g. APP-001, TGT-001, OUT-001

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Compass, Zap, ListFilter, BookOpen, Database, Radio, ArrowUpRight, Palette, Check } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Compass, Zap, ListFilter, BookOpen, Database, Radio, ArrowUpRight, Palette, Check, Download, Upload, RefreshCw, ShieldCheck } from 'lucide-react';
 import { EditorialTheme } from '../types';
 import { EDITORIAL_PALETTES } from '../utils/theme';
 
@@ -15,6 +15,9 @@ interface HeaderProps {
     highFit: number;
     recordsCount: number;
   };
+  onExportBackup?: () => void;
+  onImportBackup?: (data: any) => void;
+  onResetToMasterSeed?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,9 +26,34 @@ export const Header: React.FC<HeaderProps> = ({
   editorialTheme,
   setEditorialTheme,
   stats,
+  onExportBackup,
+  onImportBackup,
+  onResetToMasterSeed,
 }) => {
   const palette = EDITORIAL_PALETTES[editorialTheme] || EDITORIAL_PALETTES.petrol;
   const [showPaletteMenu, setShowPaletteMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const text = evt.target?.result as string;
+        const json = JSON.parse(text);
+        if (onImportBackup) {
+          onImportBackup(json);
+        }
+      } catch (err) {
+        alert('无法解析上传的文件，请确保是合法的 JSON 备份！');
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <header className={`sticky top-0 z-40 ${palette.bgClass} ${palette.textClass} border-b ${palette.borderClass} shadow-md transition-all`}>
@@ -44,8 +72,53 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
 
-        {/* PDF Edition Palette Picker Pill */}
-        <div className="flex items-center space-x-3 text-[10px] tracking-wider">
+        {/* Action Pills: Data Vault & PDF Palette */}
+        <div className="flex items-center space-x-2 sm:space-x-3 text-[10px] tracking-wider">
+          {/* Data Backup & Sync Controls */}
+          <div className="flex items-center space-x-1 bg-black/25 px-2 py-1 rounded-full border border-white/15">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".json"
+              className="hidden"
+            />
+            {onExportBackup && (
+              <button
+                type="button"
+                onClick={onExportBackup}
+                title="导出当前所有数据为 JSON 备份文件"
+                className="px-2 py-0.5 rounded-full text-[10px] font-mono transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center space-x-1"
+              >
+                <Download className="w-3 h-3 text-[#d4f04c]" />
+                <span className="hidden md:inline">Backup</span>
+              </button>
+            )}
+            {onImportBackup && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                title="导入 JSON 备份数据"
+                className="px-2 py-0.5 rounded-full text-[10px] font-mono transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center space-x-1"
+              >
+                <Upload className="w-3 h-3 text-[#9de6c7]" />
+                <span className="hidden md:inline">Import</span>
+              </button>
+            )}
+            {onResetToMasterSeed && (
+              <button
+                type="button"
+                onClick={onResetToMasterSeed}
+                title="一键同步主数据库 (57 Studios & 32 Records)"
+                className="px-2 py-0.5 rounded-full text-[10px] font-mono transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center space-x-1"
+              >
+                <RefreshCw className="w-3 h-3 text-cyan-300" />
+                <span className="hidden lg:inline">Master Sync</span>
+              </button>
+            )}
+          </div>
+
+          {/* PDF Edition Palette Picker Pill */}
           <div className="flex items-center space-x-1.5 bg-black/25 px-2.5 py-1 rounded-full border border-white/15">
             <Palette className="w-3 h-3 text-white/80" />
             <span className="font-mono text-white/60 hidden md:inline">PDF Palette:</span>
@@ -67,10 +140,6 @@ export const Header: React.FC<HeaderProps> = ({
               ))}
             </div>
           </div>
-
-          <span className="hidden lg:inline text-white/70 font-mono text-[10px]">
-            {palette.pdfPage}
-          </span>
         </div>
       </div>
 

@@ -25,6 +25,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
     { id: 'outreach_prepared', title: 'Pitch Prepared', subtitle: 'Angle & CV ready', dotColor: 'bg-[#f7a8d8]' },
     { id: 'contacted', title: 'Contacted', subtitle: 'Pitch dispatched', dotColor: palette.dotColor },
     { id: 'interviewing', title: 'In Dialogue', subtitle: 'Active conversation', dotColor: 'bg-[#9de6c7]' },
+    { id: 'dismissed', title: 'Dismissed', subtitle: 'Evaluated & set aside', dotColor: 'bg-[#94a3b8]' },
   ];
 
   return (
@@ -141,6 +142,7 @@ export const PipelineView: React.FC<PipelineViewProps> = ({
                         <option value="contacted">Contacted</option>
                         <option value="interviewing">In Dialogue</option>
                         <option value="archived">Archived</option>
+                        <option value="dismissed">Dismissed (排除)</option>
                       </select>
                     </div>
                   </div>

@@ -47,31 +47,149 @@ export const DnaProtocolView: React.FC<DnaProtocolViewProps> = ({
           </p>
         </div>
 
-        {/* 7-Step Career Engine Continuum */}
+        {/* 8-Step Career Engine Continuum */}
         <div className="pt-6 border-t border-[#ede9df]">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block mb-3">
-            SECTION 02 — THE 7-STEP CONTINUUM OF EXECUTION
-          </span>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+              SECTION 02 — THE 8-STEP CONTINUUM OF THE CAREER ENGINE
+            </span>
+            <span className="text-[10px] font-bold text-[#0c2b21] bg-[#d4f04c] px-2.5 py-0.5 rounded-full border border-[#b2cf27]">
+              8 Active Phases
+            </span>
+          </div>
+          
+          {/* Visual Step Flow */}
           <div className="bg-[#fbfaf6] p-4 sm:p-5 rounded-2xl border border-[#ded9cb] overflow-x-auto">
-            <div className="flex items-center space-x-2 whitespace-nowrap text-xs font-bold uppercase tracking-wider">
-              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">01 Understand</span>
+            <div className="flex items-center space-x-2 whitespace-nowrap text-xs font-bold tracking-tight">
+              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">
+                01 Understand Unfamiliar Domain
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">02 Structure</span>
+              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">
+                02 Identify Relationships
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">03 Concept</span>
+              <span className="text-[#0c2b21] bg-[#d4f04c] px-3 py-1.5 rounded-xl border border-[#b2cf27] shadow-xs">
+                03 Structure Complexity
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#0c2b21] bg-[#9de6c7] px-3 py-1.5 rounded-xl border border-[#7ad4ab] shadow-xs">04 Translate</span>
+              <span className="text-[#0c2b21] bg-[#9de6c7] px-3 py-1.5 rounded-xl border border-[#7ad4ab] shadow-xs">
+                04 Create Concepts / Scenarios
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#557164] bg-[#f4f2ea] px-3 py-1.5 rounded-xl border border-[#ded9cb]">05 Coordinate</span>
+              <span className="text-[#0c2b21] bg-[#9de6c7] px-3 py-1.5 rounded-xl border border-[#7ad4ab] shadow-xs">
+                05 Translate into Artefacts
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#557164] bg-[#f4f2ea] px-3 py-1.5 rounded-xl border border-[#ded9cb]">06 Produce</span>
+              <span className="text-[#0c2b21] bg-[#9ad3fa] px-3 py-1.5 rounded-xl border border-[#7ac2f5] shadow-xs">
+                06 Facilitate People
+              </span>
               <span className="text-[#718d80]">→</span>
-              <span className="text-[#0c2b21] bg-[#9ad3fa] px-3 py-1.5 rounded-xl border border-[#7ac2f5] shadow-xs">07 Realise</span>
+              <span className="text-[#0c2b21] bg-[#9ad3fa] px-3 py-1.5 rounded-xl border border-[#7ac2f5] shadow-xs">
+                07 Design Interaction / Narrative / Systems
+              </span>
+              <span className="text-[#718d80]">→</span>
+              <span className="text-[#557164] bg-[#f4f2ea] px-3 py-1.5 rounded-xl border border-[#ded9cb]">
+                08 Coordinate Implementation
+              </span>
             </div>
           </div>
+
+          {/* 8-Step Grid Breakdown */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 mt-3 text-xs">
+            <div className="p-3 bg-[#f8f7f2] rounded-xl border border-[#e4e0d5]">
+              <span className="text-[10px] font-mono font-bold text-[#456154] block mb-0.5">PHASE 01 & 02</span>
+              <span className="font-serif font-bold text-[#0c2b21] block">Deconstruct & Connect</span>
+              <p className="text-[11px] text-[#557164] mt-1 leading-snug">Rapidly comprehend alien domains, identify invisible linkages between tech, human, and business constraints.</p>
+            </div>
+            <div className="p-3 bg-[#f8f7f2] rounded-xl border border-[#e4e0d5]">
+              <span className="text-[10px] font-mono font-bold text-[#456154] block mb-0.5">PHASE 03 & 04</span>
+              <span className="font-serif font-bold text-[#0c2b21] block">Structure & Scenario</span>
+              <p className="text-[11px] text-[#557164] mt-1 leading-snug">Transform ambiguous complexity into clear strategic frameworks, future scenarios, and actionable concepts.</p>
+            </div>
+            <div className="p-3 bg-[#f8f7f2] rounded-xl border border-[#e4e0d5]">
+              <span className="text-[10px] font-mono font-bold text-[#456154] block mb-0.5">PHASE 05 & 06</span>
+              <span className="font-serif font-bold text-[#0c2b21] block">Artefact & Facilitate</span>
+              <p className="text-[11px] text-[#557164] mt-1 leading-snug">Materialize abstract thinking into tangible artefacts, while aligning cross-disciplinary stakeholders and partners.</p>
+            </div>
+            <div className="p-3 bg-[#f8f7f2] rounded-xl border border-[#e4e0d5]">
+              <span className="text-[10px] font-mono font-bold text-[#456154] block mb-0.5">PHASE 07 & 08</span>
+              <span className="font-serif font-bold text-[#0c2b21] block">Systems & Delivery</span>
+              <p className="text-[11px] text-[#557164] mt-1 leading-snug">Author systemic interaction, narrative coherence, and ensure rigorous execution down to final realisation.</p>
+            </div>
+          </div>
+
           <p className="text-xs text-[#557164] mt-3 leading-relaxed font-medium">
-            <strong className="text-[#0c2b21]">Highest-Value Core:</strong> Kylie achieves maximum organizational leverage when participating simultaneously in problem framing, conceptual architecture, cross-disciplinary translation, and rigorous physical realisation.
+            <strong className="text-[#0c2b21]">High-Leverage Synergy:</strong> Kylie thrives where cognitive complexity, strategic narrative, human facilitation, and high-fidelity artefact creation converge.
           </p>
+        </div>
+
+        {/* Expanded Search Universe */}
+        <div className="pt-6 border-t border-[#ede9df]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+              SECTION 03 — EXPANDED SEARCH UNIVERSE & TARGET ECOSYSTEMS
+            </span>
+            <span className="text-[10px] font-bold text-[#0369a1] bg-[#e0f2fe] px-2.5 py-0.5 rounded-full border border-[#bae6fd]">
+              Ecosystem Map
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-4 bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0369a1] block mb-1">
+                Human–AI Interaction &amp; AI Transformation
+              </span>
+              <p className="text-[#0c4a6e] text-[11px] leading-relaxed">
+                Agent Experience (AX), Generative &amp; Adaptive UI, Human–AI Co-creation, Cognitive Interfaces, Multi-agent workflow systems, and organizational AI transformation.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0c2b21] block mb-1">
+                Design Strategy &amp; Systems Design
+              </span>
+              <p className="text-[#3b5448] text-[11px] leading-relaxed">
+                Structuring organizational &amp; product complexity, service architectures, cross-domain ecosystem strategy, and frameworks that bridge design and technical execution.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0c2b21] block mb-1">
+                Narrative Systems &amp; Speculative Scenarios
+              </span>
+              <p className="text-[#3b5448] text-[11px] leading-relaxed">
+                Future forecasting, speculative worldbuilding, strategic foresight, tangible future artefacts, and interactive storytelling frameworks.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0c2b21] block mb-1">
+                Spatial Narrative, Exhibition &amp; Immersive
+              </span>
+              <p className="text-[#3b5448] text-[11px] leading-relaxed">
+                Physical/digital hybrid environments, brand pavilions, museum &amp; gallery scenography, interactive spatial computing, and sensory interfaces.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0c2b21] block mb-1">
+                Automotive &amp; Luxury Brand Experience
+              </span>
+              <p className="text-[#3b5448] text-[11px] leading-relaxed">
+                Integrated brand communication, high-craft restomod &amp; industrial identity, coachbuilding narratives, and premium mobility experiences (e.g. Audi, Amos).
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl">
+              <span className="font-serif font-bold text-sm text-[#0c2b21] block mb-1">
+                Creative Direction &amp; Interdisciplinary Production
+              </span>
+              <p className="text-[#3b5448] text-[11px] leading-relaxed">
+                Multidisciplinary studio leadership, concept-to-fabrication translation, artisanal craft execution, and collaborative facilitation.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Decision Ownership Spectrum */}

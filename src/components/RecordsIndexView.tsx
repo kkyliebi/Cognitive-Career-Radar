@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { ApplicationRecord, RecordCategory, ApplicationStatus, EditorialTheme } from '../types';
+import React, { useState, useMemo, useRef } from 'react';
+import { ApplicationRecord, RecordCategory, ApplicationStatus, EditorialTheme, APPLICATION_CHANNEL_OPTIONS } from '../types';
 import { EDITORIAL_PALETTES } from '../utils/theme';
 import {
   ExternalLink,
@@ -7,6 +7,7 @@ import {
   Plus,
   Filter,
   Download,
+  Upload,
   Copy,
   Check,
   ChevronDown,
@@ -20,6 +21,9 @@ import {
   Sparkles,
   Database,
   CheckCircle2,
+  Globe,
+  Mail,
+  Share2,
   X
 } from 'lucide-react';
 
@@ -28,6 +32,7 @@ interface RecordsIndexViewProps {
   onUpdateRecord: (updated: ApplicationRecord) => void;
   onAddRecord: (newRecord: ApplicationRecord) => void;
   onDeleteRecord: (id: string) => void;
+  onBulkImportRecords?: (records: ApplicationRecord[]) => void;
   onJumpToRadar?: (companyName: string) => void;
   editorialTheme?: EditorialTheme;
 }
@@ -37,6 +42,7 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
   onUpdateRecord,
   onAddRecord,
   onDeleteRecord,
+  onBulkImportRecords,
   onJumpToRadar,
   editorialTheme = 'petrol',
 }) => {
@@ -44,16 +50,18 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
   const [activeCategory, setActiveCategory] = useState<'all' | RecordCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New Record Form State
   const [newCompany, setNewCompany] = useState('');
   const [newPosition, setNewPosition] = useState('');
   const [newCategory, setNewCategory] = useState<RecordCategory>('application');
   const [newLink, setNewLink] = useState('');
-  const [newChannel, setNewChannel] = useState('');
+  const [newChannel, setNewChannel] = useState<string>('Website');
   const [newCvVersion, setNewCvVersion] = useState('Kylie BI — Communication Designer | Brand Strategy & Creative Production');
   const [newStatus, setNewStatus] = useState<ApplicationStatus>('Applied');
   const [newCompensation, setNewCompensation] = useState('');
@@ -83,27 +91,39 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
       if (statusFilter !== 'all' && rec.status !== statusFilter) {
         return false;
       }
+      if (channelFilter !== 'all' && rec.applicationChannels !== channelFilter) {
+        return false;
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchCompany = rec.company.toLowerCase().includes(q);
-        const matchPos = rec.position.toLowerCase().includes(q);
-        const matchCv = rec.cvVersion?.toLowerCase().includes(q);
-        const matchId = rec.id.toLowerCase().includes(q);
-        const matchChannel = rec.applicationChannels.toLowerCase().includes(q);
-        const matchFeedback = rec.feedback?.toLowerCase().includes(q);
+        const matchCompany = (rec.company || '').toLowerCase().includes(q);
+        const matchPos = (rec.position || '').toLowerCase().includes(q);
+        const matchCv = (rec.cvVersion || '').toLowerCase().includes(q);
+        const matchId = (rec.id || '').toLowerCase().includes(q);
+        const matchChannel = (rec.applicationChannels || '').toLowerCase().includes(q);
+        const matchFeedback = (rec.feedback || '').toLowerCase().includes(q);
         if (!matchCompany && !matchPos && !matchCv && !matchId && !matchChannel && !matchFeedback) {
           return false;
         }
       }
       return true;
     });
-  }, [records, activeCategory, statusFilter, searchQuery]);
+  }, [records, activeCategory, statusFilter, channelFilter, searchQuery]);
 
   const handleStatusChange = (record: ApplicationRecord, newSt: ApplicationStatus) => {
     const today = new Date().toISOString().split('T')[0];
     onUpdateRecord({
       ...record,
       status: newSt,
+      lastUpdate: today,
+    });
+  };
+
+  const handleChannelChange = (record: ApplicationRecord, newCh: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    onUpdateRecord({
+      ...record,
+      applicationChannels: newCh,
       lastUpdate: today,
     });
   };
@@ -189,6 +209,120 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
     document.body.removeChild(link);
   };
 
+  // Helper function to parse CSV row with quote handling
+  const parseCsvLine = (text: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"' && (i === 0 || text[i - 1] !== '\\')) {
+        if (inQuotes && text[i + 1] === '"') {
+          current += '"';
+          i++; // Skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  // Import CSV or JSON
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const rawContent = (evt.target?.result as string) || '';
+        const fileName = file.name.toLowerCase();
+
+        let importedRecords: ApplicationRecord[] = [];
+
+        if (fileName.endsWith('.json')) {
+          const parsed = JSON.parse(rawContent);
+          if (Array.isArray(parsed)) {
+            importedRecords = parsed;
+          } else if (parsed.kylie_career_records_v1) {
+            const val = parsed.kylie_career_records_v1;
+            importedRecords = typeof val === 'string' ? JSON.parse(val) : val;
+          } else if (Array.isArray(parsed.records)) {
+            importedRecords = parsed.records;
+          }
+        } else {
+          // CSV Parsing
+          const lines = rawContent.split(/\r?\n/).filter((l) => l.trim().length > 0);
+          if (lines.length > 1) {
+            const headerTokens = parseCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+            
+            for (let i = 1; i < lines.length; i++) {
+              const tokens = parseCsvLine(lines[i]);
+              if (tokens.length >= 3) {
+                const id = tokens[0] || `APP-${String(records.length + i).padStart(2, '0')}`;
+                const cat = (tokens[1] as RecordCategory) || 'application';
+                const date = tokens[2] || new Date().toISOString().split('T')[0];
+                const company = tokens[3] || 'Unknown Company';
+                const pos = tokens[4] || 'Spontaneous Application';
+                const link = tokens[5] || 'https://';
+                const channels = tokens[6] || 'Website';
+                const cv = tokens[7] || 'Kylie BI — Communication Designer';
+                const status = (tokens[8] as ApplicationStatus) || 'Applied';
+                const feedback = tokens[9] || '';
+                const comp = tokens[10] || '—';
+                const lastUp = tokens[11] || date;
+
+                importedRecords.push({
+                  id,
+                  category: cat,
+                  date,
+                  company,
+                  position: pos,
+                  applicationLink: link,
+                  applicationChannels: channels,
+                  cvVersion: cv,
+                  status,
+                  feedback,
+                  compensation: comp,
+                  lastUpdate: lastUp,
+                });
+              }
+            }
+          }
+        }
+
+        if (importedRecords.length === 0) {
+          alert('未能识别到有效的求职记录，请检查文件格式是否正确。');
+          return;
+        }
+
+        if (onBulkImportRecords) {
+          onBulkImportRecords(importedRecords);
+        } else {
+          importedRecords.forEach((r) => onAddRecord(r));
+        }
+
+        setCopiedNotification(`🎉 成功导入 ${importedRecords.length} 条求职投递记录！`);
+        setTimeout(() => setCopiedNotification(null), 4000);
+      } catch (err) {
+        console.error('Import records error:', err);
+        alert('导入解析出错，请确保是合法的 CSV 或 JSON 文件。');
+      }
+    };
+
+    reader.readAsText(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const getStatusBadge = (status: ApplicationStatus) => {
     switch (status) {
       case 'Applied':
@@ -236,6 +370,46 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
     }
   };
 
+  const getChannelBadge = (channel: string) => {
+    switch (channel) {
+      case 'Website':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#eef2f6] text-[#243c5a] border border-[#cbd5e1]">
+            <Globe className="w-2.5 h-2.5 mr-1 text-[#475569]" />
+            Website
+          </span>
+        );
+      case 'Direct Email':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e0f2fe] text-[#0369a1] border border-[#bae6fd]">
+            <Mail className="w-2.5 h-2.5 mr-1 text-[#0284c7]" />
+            Direct Email
+          </span>
+        );
+      case 'Website + Direct Email':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#eefcf4] text-[#0a3824] border border-[#9de6c7]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] mr-1" />
+            Website + Email
+          </span>
+        );
+      case 'Social Media':
+      case 'social media':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#fce7f3] text-[#9d174d] border border-[#fbcfe8]">
+            <Share2 className="w-2.5 h-2.5 mr-1 text-[#db2777]" />
+            Social Media
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#f4f2ea] text-[#557164] border border-[#e2ded4]">
+            {channel || 'Website'}
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6 text-[#0c2b21]">
       {/* Editorial Spread Header & Action Bar */}
@@ -268,6 +442,14 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
 
         {/* Action Buttons in Superside Style */}
         <div className="flex flex-wrap items-center gap-2 relative z-10">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFile}
+            accept=".csv,.json"
+            className="hidden"
+          />
+
           <button
             onClick={() => setIsAddModalOpen(true)}
             className={`inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider ${palette.buttonBgClass} ${palette.buttonTextClass} ${palette.buttonHoverBgClass} transition-all shadow-md`}
@@ -283,6 +465,15 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
           >
             <Download className={`w-3.5 h-3.5 ${palette.headlineAccentClass}`} />
             <span>Export CSV</span>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className={`inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-full text-xs font-semibold text-white ${palette.innerBoxBgClass} hover:bg-white/15 border ${palette.innerBoxBorderClass} transition-all`}
+            title="Import CSV or JSON records"
+          >
+            <Upload className={`w-3.5 h-3.5 text-[#9de6c7]`} />
+            <span>Import CSV / JSON</span>
           </button>
 
           <button
@@ -505,8 +696,8 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
           </button>
         </div>
 
-        {/* Status Filter & Search */}
-        <div className="flex items-center space-x-2">
+        {/* Status Filter, Channel Filter & Search */}
+        <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap gap-y-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -521,8 +712,21 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
             <option value="Rejected">Archived</option>
           </select>
 
+          <select
+            value={channelFilter}
+            onChange={(e) => setChannelFilter(e.target.value)}
+            className="bg-[#f4f2ea] border border-[#ded9cb] text-[#0c2b21] text-xs font-semibold rounded-full px-3 py-1.5 focus:bg-white focus:ring-2 focus:ring-[#d4f04c] focus:border-[#0c2b21]"
+          >
+            <option value="all">Channel: All</option>
+            {APPLICATION_CHANNEL_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+
           {/* Search Box */}
-          <div className="relative w-full sm:w-60">
+          <div className="relative w-full sm:w-56">
             <Search className="w-3.5 h-3.5 text-[#6c867a] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -635,8 +839,26 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
                       </td>
 
                       {/* Channels */}
-                      <td className="py-3.5 px-3 text-[#557164] text-xs font-medium">
-                        {record.applicationChannels}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <select
+                          value={record.applicationChannels || 'Website'}
+                          onChange={(e) => handleChannelChange(record, e.target.value)}
+                          className="bg-transparent border-none text-[11px] cursor-pointer font-bold text-[#0c2b21] p-0 focus:outline-none max-w-[145px]"
+                        >
+                          {APPLICATION_CHANNEL_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                          {!APPLICATION_CHANNEL_OPTIONS.includes(record.applicationChannels as any) && record.applicationChannels && (
+                            <option value={record.applicationChannels}>
+                              {record.applicationChannels}
+                            </option>
+                          )}
+                        </select>
+                        <div className="mt-1">
+                          {getChannelBadge(record.applicationChannels)}
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -739,7 +961,25 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
                                 <span className="text-[10px] font-bold uppercase text-[#738d81] block mb-1">
                                   Application Channels:
                                 </span>
-                                <span className="text-[#244133] font-medium">{record.applicationChannels}</span>
+                                <div className="flex items-center space-x-2">
+                                  <select
+                                    value={record.applicationChannels || 'Website'}
+                                    onChange={(e) => handleChannelChange(record, e.target.value)}
+                                    className="bg-[#f8f7f2] border border-[#ded9cb] rounded-lg px-2.5 py-1 text-xs font-semibold text-[#0c2b21] focus:bg-white focus:border-[#0c2b21]"
+                                  >
+                                    {APPLICATION_CHANNEL_OPTIONS.map((opt) => (
+                                      <option key={opt} value={opt}>
+                                        {opt}
+                                      </option>
+                                    ))}
+                                    {!APPLICATION_CHANNEL_OPTIONS.includes(record.applicationChannels as any) && record.applicationChannels && (
+                                      <option value={record.applicationChannels}>
+                                        {record.applicationChannels}
+                                      </option>
+                                    )}
+                                  </select>
+                                  {getChannelBadge(record.applicationChannels)}
+                                </div>
                               </div>
                             </div>
 
@@ -865,15 +1105,19 @@ export const RecordsIndexView: React.FC<RecordsIndexViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-[#0c2b21] uppercase tracking-wider mb-1">
-                    Channels / Method
+                    Application Channel
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Website / LinkedIn / Direct Email"
+                  <select
                     value={newChannel}
                     onChange={(e) => setNewChannel(e.target.value)}
-                    className="w-full bg-[#f8f7f2] border border-[#ded9cb] text-[#0c2b21] rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-[#0c2b21] focus:ring-2 focus:ring-[#d4f04c]"
-                  />
+                    className="w-full bg-[#f8f7f2] border border-[#ded9cb] text-[#0c2b21] rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-[#0c2b21] focus:ring-2 focus:ring-[#d4f04c] font-medium"
+                  >
+                    {APPLICATION_CHANNEL_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

@@ -11,6 +11,7 @@ interface RadarDiscoveryProps {
   onOpenDossier: (studio: StudioCandidate) => void;
   onDraftOutreach: (studio: StudioCandidate) => void;
   onUpdateStatus: (id: string, status: StudioCandidate['pipelineStatus']) => void;
+  onDeleteStudio?: (id: string) => void;
   onQuickLogToRecords?: (studio: StudioCandidate) => void;
   editorialTheme?: EditorialTheme;
 }
@@ -22,6 +23,7 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
   onOpenDossier,
   onDraftOutreach,
   onUpdateStatus,
+  onDeleteStudio,
   onQuickLogToRecords,
   editorialTheme = 'petrol',
 }) => {
@@ -33,7 +35,7 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // Local list filter
-  const [statusFilter, setStatusFilter] = useState<'all' | HiringStatus | 'recorded'>('all');
+  const [statusFilter, setStatusFilter] = useState<'active_all' | HiringStatus | 'recorded' | 'dismissed' | 'all'>('active_all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const locationPresets = [
@@ -46,16 +48,21 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
   ];
 
   const domainPresets = [
-    { label: 'All Ecosystems', value: 'All' },
-    { label: 'Automotive & Luxury Experience', value: 'Automotive and Luxury Brand Communication' },
-    { label: 'Spatial Narrative & Exhibition', value: 'Spatial Narrative, Exhibition and Immersive Technology' },
-    { label: 'Speculative Design & Future Systems', value: 'Speculative Design, R&D and Strategic Communication' },
-    { label: 'Interdisciplinary Creative Production', value: 'Creative Direction and Creative Production' },
+    { label: 'All Ecosystems (Expanded Universe)', value: 'All' },
+    { label: 'Human–AI Interaction & AI Transformation', value: 'Human–AI Interaction, AI Experience, Agent Experience & AI Transformation' },
+    { label: 'Design Strategy & Systems Design', value: 'Design Strategy, Systems Design & Complexity Structuring' },
+    { label: 'Narrative Systems & Speculative Scenarios', value: 'Narrative Systems, Speculative Scenarios & Worldbuilding' },
+    { label: 'Spatial Narrative & Immersive Experience', value: 'Spatial Narrative, Exhibition and Immersive Technology' },
+    { label: 'Automotive & Luxury Experience', value: 'Automotive and Luxury Brand Communication & Experience' },
+    { label: 'Creative Direction & Interdisciplinary Production', value: 'Creative Direction, Communication and Interdisciplinary Production' },
   ];
+
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   const handleLaunchProbe = async () => {
     setIsSearching(true);
     setSearchError(null);
+    setSuccessNotice(null);
     try {
       const response = await fetch('/api/discover-studios', {
         method: 'POST',
@@ -68,13 +75,16 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
         }),
       });
 
+      const data = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error('Failed to retrieve studio candidates from radar.');
+        throw new Error(data?.error || `Server responded with status ${response.status}`);
       }
 
-      const data = await response.json();
-      if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+      if (data && data.results && Array.isArray(data.results) && data.results.length > 0) {
         onAddStudios(data.results);
+        setSuccessNotice(`Discovered and added ${data.results.length} new studios to the radar!`);
+        setTimeout(() => setSuccessNotice(null), 5000);
       } else {
         setSearchError('No new unique studios found matching this precise search angle. Try broadening keywords.');
       }
@@ -88,34 +98,55 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
 
   // Helper to match studio candidate with recorded applications
   const getLinkedRecord = (studio: StudioCandidate): ApplicationRecord | undefined => {
-    const sName = studio.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!studio || !studio.name) return undefined;
+    const sName = (studio.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     return records.find((rec) => {
-      const rName = rec.company.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!rec || !rec.company) return false;
+      const rName = (rec.company || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       return sName.includes(rName) || rName.includes(sName);
     });
   };
 
   // Filtered studios
   const filteredStudios = studios.filter((studio) => {
+    if (!studio) return false;
+    const isDismissed = studio.pipelineStatus === 'dismissed';
     const linked = getLinkedRecord(studio);
-    if (statusFilter === 'recorded') {
+
+    if (statusFilter === 'active_all') {
+      if (isDismissed) return false;
+    } else if (statusFilter === 'dismissed') {
+      if (!isDismissed) return false;
+    } else if (statusFilter === 'recorded') {
       if (!linked) return false;
-    } else if (statusFilter !== 'all') {
-      if (studio.hiringStatus !== statusFilter) return false;
+    } else if (statusFilter === 'all') {
+      // Show all
+    } else {
+      // HiringStatus match, and exclude dismissed
+      if (isDismissed || studio.hiringStatus !== statusFilter) return false;
     }
 
-    const matchesQuery =
-      searchQuery.trim() === '' ||
-      studio.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      studio.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      studio.ecosystem.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      studio.corePhilosophy.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesQuery;
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (!q) return true;
+
+    const sName = (studio.name || '').toLowerCase();
+    const sLoc = (studio.location || '').toLowerCase();
+    const sEco = (studio.ecosystem || '').toLowerCase();
+    const sPhil = (studio.corePhilosophy || '').toLowerCase();
+
+    return (
+      sName.includes(q) ||
+      sLoc.includes(q) ||
+      sEco.includes(q) ||
+      sPhil.includes(q)
+    );
   });
 
-  const activeCount = studios.filter((s) => s.hiringStatus === 'active_role').length;
-  const spontaneousCount = studios.filter((s) => s.hiringStatus === 'spontaneous_outreach').length;
-  const recordedCount = studios.filter((s) => getLinkedRecord(s) !== undefined).length;
+  const activeAllCount = studios.filter((s) => s && s.pipelineStatus !== 'dismissed').length;
+  const activeCount = studios.filter((s) => s && s.hiringStatus === 'active_role' && s.pipelineStatus !== 'dismissed').length;
+  const spontaneousCount = studios.filter((s) => s && s.hiringStatus === 'spontaneous_outreach' && s.pipelineStatus !== 'dismissed').length;
+  const recordedCount = studios.filter((s) => s && getLinkedRecord(s) !== undefined).length;
+  const dismissedCount = studios.filter((s) => s && s.pipelineStatus === 'dismissed').length;
 
   return (
     <div className="space-y-6">
@@ -195,12 +226,50 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
             </label>
             <input
               type="text"
-              placeholder="e.g. Restomod, Spatial Narrative, R&amp;D"
+              placeholder="e.g. Agent Experience, Systems Design, Restomod"
               value={customKeywords}
               onChange={(e) => setCustomKeywords(e.target.value)}
               className={`w-full ${palette.bgClass} border ${palette.borderClass} text-white placeholder-white/40 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-white/30 font-medium`}
             />
           </div>
+        </div>
+
+        {/* Quick-Filter Keyword Universe Chips */}
+        <div className="flex items-center space-x-2 flex-wrap gap-y-1.5 mb-5 text-[11px] relative z-10">
+          <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${palette.mutedClass} mr-1`}>
+            Quick Universes:
+          </span>
+          {[
+            'Human–AI & Agent Experience',
+            'AI Transformation & UX',
+            'Design Strategy & Systems',
+            'Narrative Systems & Scenarios',
+            'Spatial Narrative & Immersive',
+            'Automotive Communication',
+            'Physical Artefact Translation',
+          ].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setCustomKeywords(tag)}
+              className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all ${
+                customKeywords === tag
+                  ? 'bg-white text-[#0c2b21] border-white font-bold shadow-xs'
+                  : 'bg-white/10 text-white/90 border-white/15 hover:bg-white/20'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+          {customKeywords && (
+            <button
+              type="button"
+              onClick={() => setCustomKeywords('')}
+              className="text-white/60 hover:text-white underline text-[10px] ml-1"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Action Button & Telemetry */}
@@ -229,6 +298,15 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
           </button>
         </div>
 
+        {successNotice && (
+          <div className="mt-4 p-3 bg-[#0a3124] border border-[#a6f4c5]/40 text-[#a6f4c5] text-xs rounded-xl relative z-10 font-medium flex items-center justify-between">
+            <span className="flex items-center">
+              <span className="w-2 h-2 rounded-full bg-[#a6f4c5] mr-2 animate-pulse" />
+              {successNotice}
+            </span>
+          </div>
+        )}
+
         {searchError && (
           <div className="mt-4 p-3 bg-[#3a151b] border border-[#fca590]/50 text-[#fca590] text-xs rounded-xl relative z-10 font-medium">
             {searchError}
@@ -241,14 +319,14 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
         {/* Pastel Filter Chips */}
         <div className="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto pb-1">
           <button
-            onClick={() => setStatusFilter('all')}
+            onClick={() => setStatusFilter('active_all')}
             className={`px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap font-medium ${
-              statusFilter === 'all'
+              statusFilter === 'active_all'
                 ? 'bg-[#0c2b21] text-white font-bold shadow-sm'
                 : 'bg-white text-[#345244] hover:bg-[#eae7dd] border border-[#ded9cb]'
             }`}
           >
-            All Studios ({studios.length})
+            Active Radar ({activeAllCount})
           </button>
 
           <button
@@ -286,6 +364,30 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>In Records ({recordedCount})</span>
           </button>
+
+          <button
+            onClick={() => setStatusFilter('dismissed')}
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all whitespace-nowrap font-semibold ${
+              statusFilter === 'dismissed'
+                ? 'bg-[#64748b] text-white font-bold shadow-xs'
+                : 'bg-white text-[#64748b] hover:bg-[#f1f5f9] border border-[#cbd5e1]'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#94a3b8]" />
+            <span>Dismissed / 排除 ({dismissedCount})</span>
+          </button>
+
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap font-medium ${
+              statusFilter === 'all'
+                ? 'bg-[#18523f] text-white font-bold shadow-xs'
+                : 'bg-white text-[#6b7280] hover:bg-[#eae7dd] border border-[#ded9cb]'
+            }`}
+            title="View all candidates including dismissed"
+          >
+            Show All ({studios.length})
+          </button>
         </div>
 
         {/* Editorial Search Box */}
@@ -307,7 +409,7 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
           <Compass className="w-10 h-10 mx-auto text-[#7e998c] mb-2" />
           <h3 className="text-base font-serif font-bold text-[#0c2b21]">No candidate matches this filter</h3>
           <p className="text-xs text-[#5f7a6e] mt-1 max-w-sm mx-auto font-medium">
-            Reset filter to "All Studios" or click "Launch Discovery Probe" to discover new creative practices.
+            Reset filter to "Active Radar" or click "Launch Discovery Probe" to discover new creative practices.
           </p>
         </div>
       ) : (
@@ -322,6 +424,7 @@ export const RadarDiscovery: React.FC<RadarDiscoveryProps> = ({
                 onOpenDossier={onOpenDossier}
                 onDraftOutreach={onDraftOutreach}
                 onUpdateStatus={onUpdateStatus}
+                onDeleteStudio={onDeleteStudio}
                 onQuickLogToRecords={onQuickLogToRecords}
               />
             );
