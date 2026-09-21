@@ -1,7 +1,7 @@
 import React from 'react';
 import { EditorialTheme } from '../types';
 import { EDITORIAL_PALETTES } from '../utils/theme';
-import { BookOpen, AlertTriangle, Layers } from 'lucide-react';
+import { BookOpen, AlertTriangle, Layers, Target, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface DnaProtocolViewProps {
   editorialTheme?: EditorialTheme;
@@ -195,7 +195,7 @@ export const DnaProtocolView: React.FC<DnaProtocolViewProps> = ({
         {/* Decision Ownership Spectrum */}
         <div className="pt-6 border-t border-[#ede9df]">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block mb-3">
-            SECTION 03 — DECISION OWNERSHIP SPECTRUM (LEVELS 0 TO 4)
+            SECTION 04 — DECISION OWNERSHIP SPECTRUM (LEVELS 0 TO 4)
           </span>
           <div className="space-y-3 text-xs">
             <div className="p-4 sm:p-5 bg-[#eefcf4] rounded-2xl border border-[#9de6c7] flex items-start justify-between gap-4">
@@ -244,7 +244,7 @@ export const DnaProtocolView: React.FC<DnaProtocolViewProps> = ({
         <div className="pt-6 border-t border-[#ede9df]">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#b02213] flex items-center mb-3">
             <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
-            SECTION 04 — HARD NEGATIVE CONSTRAINTS (INSTANT REDUCTION)
+            SECTION 05 — HARD NEGATIVE CONSTRAINTS (INSTANT REDUCTION)
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-4 sm:p-5 bg-[#fff5f2] border border-[#fca590] rounded-2xl text-[#4a1208]">
@@ -262,6 +262,108 @@ export const DnaProtocolView: React.FC<DnaProtocolViewProps> = ({
             <div className="p-4 sm:p-5 bg-[#fff5f2] border border-[#fca590] rounded-2xl text-[#4a1208]">
               <span className="font-serif font-bold text-sm block mb-1 text-[#b02213]">Superficial "Creativity":</span>
               Visual flair applied at the very end to decorate weak conceptual foundations.
+            </div>
+          </div>
+        </div>
+
+        {/* Section 06: 18-Point Protocol Rubric & Scoring */}
+        <div className="pt-6 border-t border-[#ede9df]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] flex items-center">
+              <Target className="w-3.5 h-3.5 mr-1.5 text-[#0c2b21]" />
+              SECTION 06 — THE 18-POINT EVALUATION RUBRIC &amp; GROUND TRUTH SCORING
+            </span>
+            <span className="text-[10px] font-bold text-[#0c2b21] bg-[#d4f04c] px-2.5 py-0.5 rounded-full border border-[#b2cf27]">
+              18 Inspection Points
+            </span>
+          </div>
+          <p className="text-xs text-[#557164] mb-4 font-editorial italic">
+            The multi-dimensional diagnostic matrix executed whenever evaluating candidate studios, spontaneous outreach angles, or incoming opportunity briefs.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            {/* Cluster 1: Structural Position */}
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+                Cluster I · Structural Positioning
+              </span>
+              <ul className="space-y-1.5 text-[#244133] text-[11px]">
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">01.</span>
+                  <span><strong>Actual Role:</strong> Deconstructed underlying function beyond title convention.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">02.</span>
+                  <span><strong>Organizational Position:</strong> Proximity to executive decision-makers and founders.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">03.</span>
+                  <span><strong>Problem Solved:</strong> Strategic tension addressed (complexity vs. delivery).</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Cluster 2: Value Transformation */}
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+                Cluster II · Cognitive Value Stream
+              </span>
+              <ul className="space-y-1.5 text-[#244133] text-[11px]">
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">04.</span>
+                  <span><strong>Input:</strong> Abstract briefs, raw engineering data, or cultural intention.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">05.</span>
+                  <span><strong>Transformation:</strong> Cognitive framing, translation, and systems structuring.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">06.</span>
+                  <span><strong>Output:</strong> High-craft tangible artefacts, spatial realities, and narrative frameworks.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Cluster 3: Autonomy & Engine */}
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+                Cluster III · Autonomy &amp; Career Engine
+              </span>
+              <ul className="space-y-1.5 text-[#244133] text-[11px]">
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">07.</span>
+                  <span><strong>Decision Ownership:</strong> Calibration on Level 0 to Level 4 spectrum.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">08.</span>
+                  <span><strong>8-Step Engine Fit:</strong> Mapping across Kylie's active career phases.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">09.</span>
+                  <span><strong>Cross-Functional Bridge:</strong> Design, engineering, strategy, and business alignment.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Cluster 4: Calibration & Pitch */}
+            <div className="p-4 bg-[#fbfaf6] border border-[#ded9cb] rounded-2xl space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#648274] block">
+                Cluster IV · Calibration &amp; Action
+              </span>
+              <ul className="space-y-1.5 text-[#244133] text-[11px]">
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">10–12.</span>
+                  <span><strong>Signals &amp; Unknowns:</strong> Positive alignments, friction traps, and critical unknowns.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">13–16.</span>
+                  <span><strong>Scoring &amp; Priority:</strong> Studio fit (0-100), role fit (0-100), ranking tier &amp; confidence.</span>
+                </li>
+                <li className="flex items-start space-x-1.5">
+                  <span className="font-mono font-bold text-[#0c2b21]">17–18.</span>
+                  <span><strong>Action &amp; Outreach:</strong> Recommended CV track, portfolio emphasis, and pitch angle.</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
